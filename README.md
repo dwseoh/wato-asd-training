@@ -34,7 +34,7 @@ The navigation system consists of 4 nodes:
 
 ### Set Navigation Goals
 
-1. Open Foxglove at http://localhost:8080
+1. Open Foxglove and paste websocket link
 2. In the 3D panel, click the "Publish" button
 3. Select "Publish point"
 4. Hold **Shift** and **click** on the map to set a goal
