@@ -1,11 +1,44 @@
 #include "map_memory_node.hpp"
 
-MapMemoryNode::MapMemoryNode() : Node("map_memory"), map_memory_(robot::MapMemoryCore(this->get_logger())) {}
-
-int main(int argc, char ** argv)
+MapMemoryNode::MapMemoryNode() 
+    : Node("map_memory_node"), 
+      map_memory_(this->get_logger()) 
 {
-  rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<MapMemoryNode>());
-  rclcpp::shutdown();
-  return 0;
+    costmap_sub_ = this->create_subscription<nav_msgs::msg::OccupancyGrid>(
+        "/costmap", 10, std::bind(&MapMemoryNode::costmapCallback, this, std::placeholders::_1));
+    
+    odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
+        "/odom/filtered", 10, std::bind(&MapMemoryNode::odomCallback, this, std::placeholders::_1));
+
+    map_pub_ = this->create_publisher<nav_msgs::msg::OccupancyGrid>("/map", 10);
+
+    timer_ = this->create_wall_timer(
+        std::chrono::seconds(1), std::bind(&MapMemoryNode::updateMap, this));
+        
+    RCLCPP_INFO(this->get_logger(), "Map Memory Node Initialized (Core/Node Split)");
+}
+
+void MapMemoryNode::costmapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg) {
+    map_memory_.updateCostmap(msg);
+}
+
+void MapMemoryNode::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg) {
+    map_memory_.updateOdometry(msg);
+}
+
+void MapMemoryNode::updateMap() {
+    if (map_memory_.shouldUpdateMap()) {
+        map_memory_.updateMap();
+        
+        auto global_map = map_memory_.getGlobalMap();
+        global_map.header.stamp = this->now(); 
+        map_pub_->publish(global_map);
+    }
+}
+
+int main(int argc, char **argv) {
+    rclcpp::init(argc, argv);
+    rclcpp::spin(std::make_shared<MapMemoryNode>());
+    rclcpp::shutdown();
+    return 0;
 }

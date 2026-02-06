@@ -11,6 +11,21 @@ class ControlNode : public rclcpp::Node {
 
   private:
     robot::ControlCore control_;
+
+    // subscribers
+    rclcpp::Subscription<nav_msgs::msg::Path>::SharedPtr path_sub_;
+    rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
+
+    // publisher
+    rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_pub_;
+
+    // control loop timer
+    rclcpp::TimerBase::SharedPtr timer_;
+
+    // callback handlers
+    void path_callback(const nav_msgs::msg::Path::SharedPtr msg);
+    void odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg);
+    void timer_callback();
 };
 
 #endif
